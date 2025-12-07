@@ -70,8 +70,8 @@ Flattens JSON and extracts:
 
 - HTTP Request Node – Fetch Reddit posts
 
--Code (JS) Nodes – Extract data, count mentions, analyze sentiment, calculate SoV
+- Code (JS) Nodes – Extract data, count mentions, analyze sentiment, calculate SoV
 
--JSON Output – Store structured data for reporting
+- JSON Output – Store structured data for reporting
 
--Fully free → no paid APIs or credentials required
+- Fully free → no paid APIs or credentials required
