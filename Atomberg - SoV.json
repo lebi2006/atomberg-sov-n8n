@@ -1,0 +1,166 @@
+{
+  "name": "Atomberg - SoV",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3fa2907c-ae5e-4593-8768-301e8220d424",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/search.json?q=smart+fan+India&limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d999d387-d73a-449b-8ca1-8021ad961b25",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\nconst posts = item.json.data.children;\n\n// Flatten posts into n8n items\nconst output = posts.map(post => {\n    const data = post.data;\n    return {\n        json: {\n            title: data.title || \"\",\n            text: data.selftext || \"\",\n            upvotes: data.ups || 0\n        }\n    };\n});\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d22ba4c8-a16c-492f-888d-c39d65f5f57b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const brands = ['Atomberg', 'Havells', 'Crompton', 'Orient', 'Bajaj'];\n\nreturn $input.all().map(item => {\n    const text = `${item.json.title} ${item.json.text}`.toLowerCase();\n    item.json.brandCounts = {};\n    brands.forEach(brand => {\n        const regex = new RegExp(brand.toLowerCase(), 'g');\n        const count = (text.match(regex) || []).length;\n        item.json.brandCounts[brand] = count;\n    });\n    return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "98743b98-4840-4288-9441-5b23699b6450",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const positiveWords = ['good', 'great', 'excellent', 'best', 'love', 'awesome'];\nconst negativeWords = ['bad', 'worst', 'poor', 'hate', 'problem', 'slow'];\n\nreturn $input.all().map(item => {\n    const text = `${item.json.title} ${item.json.text}`.toLowerCase();\n    let score = 0;\n\n    const positivesFound = positiveWords.filter(w => text.includes(w));\n    const negativesFound = negativeWords.filter(w => text.includes(w));\n\n    score += positivesFound.length;\n    score -= negativesFound.length;\n\n    item.json.sentiment = {\n        score: score,\n        positiveWordsFound: positivesFound,\n        negativeWordsFound: negativesFound\n    };\n\n    return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "78fa37cb-a030-454a-a921-b9d7079a9d73",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const brands = ['Atomberg', 'Havells', 'Crompton', 'Orient', 'Bajaj'];\n\nlet totals = {};\nbrands.forEach(b => totals[b] = 0);\n\n$input.all().forEach(item => {\n    const counts = item.json.brandCounts;\n    const sentimentScore = Math.max(item.json.sentiment.score, 0); // ignore negative\n    const weight = 1 + item.json.upvotes/100 + sentimentScore; // weight by upvotes + positive sentiment\n    brands.forEach(brand => {\n        totals[brand] += (counts[brand] || 0) * weight;\n    });\n});\n\n// Compute Atomberg Share of Voice %\nconst totalSum = brands.reduce((sum, b) => sum + totals[b], 0);\nconst atombergSoV = totalSum ? (totals['Atomberg']/totalSum)*100 : 0;\n\nreturn [{\n    json: {\n        totals: totals,\n        atombergSoV: atombergSoV.toFixed(2) + '%'\n    }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "97f6e9a7-7c81-4c1a-a6c4-889e87ca65cc",
+      "name": "Code in JavaScript3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bcbb22a4-0e2b-4c0d-a4ca-96871c5a8ff9",
+  "meta": {
+    "instanceId": "866cd5d5f406c4a20fbe8b7aa289c1f3bef8e1353947bc5704b23f4512078004"
+  },
+  "id": "Fw3S0oYP6gJxnjfR",
+  "tags": []
+}
