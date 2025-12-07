@@ -1,5 +1,6 @@
-#Atomberg Smart Fan: Share of Voice Analysis Workflow#
-##Overview##
+#Atomberg Smart Fan: Share of Voice Analysis Workflow
+
+##Overview
 
 This repository contains an n8n workflow that analyzes Atomberg’s Share of Voice (SoV) on Reddit for the keyword “smart fan India”. It counts mentions of Atomberg and competitors, performs sentiment analysis, and calculates weighted SoV.
 
